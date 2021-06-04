@@ -69,10 +69,6 @@ public class UserService {
 		return null;
 	}
 
-	public Collection<User> findAllUsersExceptGivenEmail(String email) {
-		return userRepository.findAllUsersExceptGivenEmail(email);
-	}
-
 	public User updateRoleById(long id) {
 		Optional<User> optional = userRepository.findById(id);
 		if (optional.isPresent()) {
