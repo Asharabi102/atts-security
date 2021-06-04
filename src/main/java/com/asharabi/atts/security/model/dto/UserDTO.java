@@ -7,14 +7,10 @@ public class UserDTO implements Serializable {
 	private static final long serialVersionUID = 4708793901475556163L;
 
 	private int id;
-	private boolean active;
 	private String username;
 	private String password;
-	private String firstName;
-	private String lastName;
 	private String email;
-	private int status;
-	private String roleName;
+	private String resetPasswordToken;
 
 	public UserDTO() {
 	}
@@ -27,44 +23,12 @@ public class UserDTO implements Serializable {
 		this.id = id;
 	}
 
-	public boolean getActive() {
-		return active;
-	}
-
-	public void setActive(boolean active) {
-		this.active = active;
-	}
-
-	public String getFirstName() {
-		return firstName;
-	}
-
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-	public String getLastName() {
-		return lastName;
-	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
-
 	public String getEmail() {
 		return email;
 	}
 
 	public void setEmail(String email) {
 		this.email = email;
-	}
-
-	public int getStatus() {
-		return status;
-	}
-
-	public void setStatus(int status) {
-		this.status = status;
 	}
 
 	public String getUsername() {
@@ -82,13 +46,13 @@ public class UserDTO implements Serializable {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-
-	public String getRoleName() {
-		return roleName;
+	
+	public String getResetPasswordToken() {
+		return resetPasswordToken;
 	}
 
-	public void setRoleName(String roleName) {
-		this.roleName = roleName;
+	public void setResetPasswordToken(String resetPasswordToken) {
+		this.resetPasswordToken = resetPasswordToken;
 	}
 
 }

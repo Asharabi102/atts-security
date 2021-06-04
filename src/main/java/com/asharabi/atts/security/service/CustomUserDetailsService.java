@@ -47,9 +47,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 	}
 
 	public User findByEmail(String email) {
-		Optional<User> user = userRepository.findByEmail(email);
-		if (user.isPresent()) {
-			return user.get();
+		Optional<User> userOptional = userRepository.findByEmail(email);
+		if (userOptional.isPresent()) {
+			return userOptional.get();
 		}
 		return null;
 	}
@@ -58,11 +58,10 @@ public class CustomUserDetailsService implements UserDetailsService {
 		String email = userDTO.getEmail();
 		Optional<User> userOptional = userRepository.findByEmail(email);
 		userOptional.ifPresent(user -> {
-			throw new AlreadyExistsException("Email already exist");
+			throw new AlreadyExistsException("Duplicate email: Email already used by another profile");
 		});
 		User user = dozerBeanMapper.map(userDTO, User.class);
-		user = addUser(user);
-		return user;
+		return addUser(user);
 	}
 
 	public CustomUserDetails getCurrentUser() {
@@ -71,7 +70,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 		if (principal.isPresent()) {
 			return principal.get();
 		} else
-			throw new IllegalArgumentException("No user logged in");
+			throw new IllegalArgumentException("You are not logged in");
 	}
 
 }

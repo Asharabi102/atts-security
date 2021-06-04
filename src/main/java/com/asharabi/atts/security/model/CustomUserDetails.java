@@ -11,13 +11,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 public class CustomUserDetails implements UserDetails {
 
-	private static final long serialVersionUID = 4470072355315571719L;
+	private static final long serialVersionUID = 8391514525638705280L;
 
 	private final transient Logger log = LoggerFactory.getLogger(this.getClass());
 
 	private String userName;
 	private String password;
-	private boolean active;
+	//private boolean active;
 	private List<GrantedAuthority> authorities = new ArrayList<>();
 
 	public CustomUserDetails() {
@@ -26,11 +26,7 @@ public class CustomUserDetails implements UserDetails {
 	public CustomUserDetails(User user) {
 		this.userName = user.getEmail();
 		this.password = user.getPassword();
-		this.active = true;
-		/*
-		 * this.active = user.getActive(); user.getRoles().forEach(role -> {
-		 * authorities.add(new SimpleGrantedAuthority(role.getRole())); });
-		 */
+		//this.active = true;
 	}
 
 	@Override
@@ -65,6 +61,6 @@ public class CustomUserDetails implements UserDetails {
 
 	@Override
 	public boolean isEnabled() {
-		return active;
+		return true;
 	}
 }

@@ -25,17 +25,11 @@ public class User implements Serializable {
 	@Column(name = "password")
 	private String password;
 
-	@Column(name = "first_name")
-	private String firstName;
-
-	@Column(name = "last_name")
-	private String lastName;
+	@Column(name = "email")
+	private String email;
 
 	@Column(name = "reset_password_token")
 	private String resetPasswordToken;
-
-	@Column(name = "email")
-	private String email;
 
 	public User() {
 	}
@@ -46,22 +40,6 @@ public class User implements Serializable {
 
 	public void setId(long id) {
 		this.id = id;
-	}
-
-	public String getFirstName() {
-		return firstName;
-	}
-
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-	public String getLastName() {
-		return lastName;
-	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
 	}
 
 	public String getPassword() {

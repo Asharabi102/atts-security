@@ -20,7 +20,7 @@ import com.asharabi.atts.security.service.CustomUserDetailsService;
 @EnableWebSecurity
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-	private final Logger log = LoggerFactory.getLogger(SecurityConfiguration.class);
+	private final Logger log = LoggerFactory.getLogger(this.getClass());
 	
 	@Autowired
 	private CustomUserDetailsService userDetailsService;

@@ -1,18 +1,20 @@
 package com.asharabi.atts.security.service;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 import org.dozer.DozerBeanMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.asharabi.atts.security.exceptions.UserNotFoundException;
 import com.asharabi.atts.security.model.User;
 import com.asharabi.atts.security.model.dto.UserDTO;
 import com.asharabi.atts.security.repository.UserRepository;
 
 @Service
+@Transactional
 public class UserService {
 
 	@Autowired
@@ -20,15 +22,16 @@ public class UserService {
 
 	@Autowired
 	private CustomUserDetailsService customUserDetailsService;
-
+	
 	@Autowired
 	private DozerBeanMapper dozerBeanMapper;
+
+	@Autowired
+	private PasswordEncoder bCryptPasswordEncoder;
 
 	public User addUser(UserDTO userDTO) {
 		User user = dozerBeanMapper.map(userDTO, User.class);
 		user.setPassword(userDTO.getPassword());
-		user.setFirstName(userDTO.getFirstName());
-		user.setLastName(userDTO.getLastName());
 		user = customUserDetailsService.addUser(user);
 		return user;
 	}
@@ -36,18 +39,13 @@ public class UserService {
 	public User editUser(UserDTO userDTO) {
 		int userId = userDTO.getId();
 		User user = findById(userId);
-		user.setFirstName(userDTO.getFirstName());
-		user.setLastName(userDTO.getLastName());
-
 		String password = userDTO.getPassword();
-
 		if (password != null) {
 			password = password.trim();
-			if (password.length() > 0) {
+			if (!password.isEmpty()) {
 				user.setPassword(password);
 			}
 		}
-		user.setLastName(userDTO.getLastName());
 		user.setEmail(userDTO.getEmail());
 		user = customUserDetailsService.addUser(user);
 		return user;
@@ -57,43 +55,52 @@ public class UserService {
 		return userRepository.save(user);
 	}
 
-	public List<User> getAllUser() {
-		return userRepository.findAll();
-	}
-
 	public User findByEmail(String email) {
-		Optional<User> user = userRepository.findByEmail(email);
-		if (user.isPresent()) {
-			return user.get();
-		}
-		return null;
-	}
-
-	public User updateRoleById(long id) {
-		Optional<User> optional = userRepository.findById(id);
-		if (optional.isPresent()) {
-			User user = optional.get();
-			update(user);
-			return user;
+		Optional<User> userOptional = userRepository.findByEmail(email);
+		if (userOptional.isPresent()) {
+			return userOptional.get();
 		}
 		return null;
 	}
 
 	public User findById(long id) {
-		Optional<User> optional = userRepository.findById(id);
-		if (optional.isPresent()) {
-			User user = optional.get();
-			return user;
+		Optional<User> userOptional = userRepository.findById(id);
+		if (userOptional.isPresent()) {
+			return userOptional.get();
 		}
 		return null;
 	}
 
 	public void deleteById(long id) {
-		Optional<User> optional = userRepository.findById(id);
-		if (optional.isPresent()) {
-			User user = optional.get();
-			userRepository.delete(user);
+		Optional<User> userOptional = userRepository.findById(id);
+		if (userOptional.isPresent()) {
+			userRepository.delete(userOptional.get());
 		}
+	}
+
+	public void updateResetPasswordToken(String token, String email) throws UserNotFoundException {
+		User user = findByEmail(email);
+		if (user != null) {
+			user.setResetPasswordToken(token);
+			userRepository.save(user);
+		} else {
+			throw new UserNotFoundException("Could not find any user with the email " + email);
+		}
+	}
+
+	public User getByResetPasswordToken(String token) {
+		Optional<User> userOptional = userRepository.findByResetPasswordToken(token);
+		if (userOptional.isPresent()) {
+			return userOptional.get();
+		}
+		return null;
+	}
+
+	public void updatePassword(User user, String newPassword) {
+		String encodedPassword = bCryptPasswordEncoder.encode(newPassword);
+		user.setPassword(encodedPassword);
+		user.setResetPasswordToken(null);
+		userRepository.save(user);
 	}
 
 }
