@@ -1,43 +1,46 @@
 package com.asharabi.atts.security.rest.controller;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
-import javax.servlet.http.HttpServletRequest;
 
 import org.dozer.DozerBeanMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.ui.Model;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.asharabi.atts.security.api.dto.AuthenticationRequest;
+import com.asharabi.atts.security.api.dto.AuthenticationResponse;
+import com.asharabi.atts.security.api.dto.UserDTO;
 import com.asharabi.atts.security.exceptions.UserNotFoundException;
 import com.asharabi.atts.security.jwt.JwtUtil;
 import com.asharabi.atts.security.model.User;
-import com.asharabi.atts.security.model.dto.AuthenticationRequest;
-import com.asharabi.atts.security.model.dto.AuthenticationResponse;
-import com.asharabi.atts.security.model.dto.UserDTO;
 import com.asharabi.atts.security.service.CustomUserDetailsService;
 import com.asharabi.atts.security.service.UserService;
-import com.asharabi.atts.security.util.WebHelper;
 
 import net.bytebuddy.utility.RandomString;
 
 @RestController
 public class CommonRestController {
+
+	@Autowired
+	private PasswordEncoder bCryptPasswordEncoder;
 
 	@Autowired
 	private AuthenticationManager authenticationManager;
@@ -74,16 +77,17 @@ public class CommonRestController {
 	}
 
 	@PostMapping(value = "/login")
-	public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest req) {
+	public AuthenticationResponse login(@RequestBody AuthenticationRequest req) {
 		try {
 			authenticationManager
 					.authenticate(new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
-		} catch (BadCredentialsException e) {
-			throw new BadCredentialsException("Incorrect username or password", e);
+		} catch (AuthenticationException e) {
+			log.error("Bad credentials: Incorrect username or password");
+			throw new BadCredentialsException("Incorrect username or password");
 		}
 		UserDetails userDetails = userDetailsService.loadUserByUsername(req.getUsername());
 		final String jwt = jwtTokenUtil.generateToken(userDetails);
-		return ResponseEntity.ok(new AuthenticationResponse(jwt));
+		return new AuthenticationResponse(jwt);
 	}
 
 	@PostMapping(value = "/register")
@@ -93,62 +97,59 @@ public class CommonRestController {
 		return userdto;
 	}
 
-	// TODO reset password
-
-	@GetMapping(value = "/forgot")
-	public String forgot() {
-		return "forgot_password_form";
-	}
-
 	@PostMapping(value = "/forgot")
-	public String sendForgot(HttpServletRequest request, Model model) {
-		String email = request.getParameter("email");
+	public Map<String, String> sendForgot(@RequestBody UserDTO dto) {
+		String email = dto.getEmail();
 		String token = RandomString.make(30);
+		Map<String, String> map = new HashMap<>();
 		try {
 			userService.updateResetPasswordToken(token, email);
-			String resetPasswordLink = WebHelper.getSiteURL(request) + "/reset_password?token=" + token;
+			String resetPasswordLink = dto.getPortalURL() + "/reset_password?token=" + token;
 			sendEmail(email, resetPasswordLink);
-			model.addAttribute("message", "We have sent a reset password link to your email. Please check.");
-
+			map.put("success", "We have sent a reset password link to your email. Please check.");
 		} catch (UserNotFoundException ex) {
-			model.addAttribute("error", ex.getMessage());
+			map.put("error", ex.getMessage());
 		} catch (Exception e) {
-			model.addAttribute("error", "Error while sending email: " + e.getMessage());
+			map.put("error", "Error while sending email: " + e.getMessage());
 		}
-		return "forgot_password_form";
+		return map;
 	}
 
-	@GetMapping(value = "/resetPassword")
-	public String resetPassword(@Param(value = "token") String token, Model model) {
+	@PostMapping(value = "/resetPasswordCheck")
+	public boolean resetPasswordCheck(@RequestBody String token) {
 		User user = userService.getByResetPasswordToken(token);
-		model.addAttribute("token", token);
-		if (user == null) {
-			model.addAttribute("message", "Invalid Token");
-			return "message";
-		}
-		return "reset_password_form";
+		return user != null;
 	}
 
+	@PostMapping(value = "/resetPassword2")
+	public boolean resetPassword2(@RequestBody UserDTO userDTO) {
+		boolean updated = false;
+		User user = userService.getByResetPasswordToken(userDTO.getResetPasswordToken());
+		if (user != null) {
+			User updatePassword = userService.updatePassword(user, userDTO.getPassword());
+			if (updatePassword.getPassword().equals(bCryptPasswordEncoder.encode(userDTO.getPassword())))
+				updated = true;
+		}
+		return updated;
+	}
+	
 	@PostMapping(value = "/resetPassword")
-	public String resetPassword(HttpServletRequest request, Model model) {
-		String token = request.getParameter("token");
-		String password = request.getParameter("password");
-		User user = userService.getByResetPasswordToken(token);
-		model.addAttribute("title", "Reset your password");
-		if (user == null) {
-			model.addAttribute("message", "Invalid Token");
-			return "message";
-		} else {
-			userService.updatePassword(user, password);
-			model.addAttribute("message", "You have successfully changed your password.");
+	public boolean resetPassword(@RequestBody UserDTO userDTO) {
+		boolean updated = false;
+		User user = userService.findByEmail(userDTO.getEmail());
+		if (user != null) {
+			String oldPassword = user.getPassword();
+			User updatePassword = userService.updatePassword(user, userDTO.getPassword());
+			if (!updatePassword.getPassword().equals(oldPassword))
+				updated = true;
 		}
-		return "message";
+		return updated;
 	}
 
 	public void sendEmail(String recipientEmail, String link) throws MessagingException, UnsupportedEncodingException {
 		MimeMessage message = mailSender.createMimeMessage();
 		MimeMessageHelper helper = new MimeMessageHelper(message);
-		helper.setFrom("contact@shopme.com", "Shopme Support");
+		helper.setFrom("contact@asharabi-atts.com", "ATTS Support");
 		helper.setTo(recipientEmail);
 		String subject = "Here's the link to reset your password";
 		String content = "<p>Hello,</p>" + "<p>You have requested to reset your password.</p>"

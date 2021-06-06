@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,7 +19,7 @@ import com.asharabi.atts.security.filter.JwtRequestFilter;
 import com.asharabi.atts.security.service.CustomUserDetailsService;
 
 @EnableWebSecurity
-public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 	
@@ -41,11 +42,17 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             	.sessionManagement().sessionCreationPolicy( SessionCreationPolicy.STATELESS )
 			.and()
 				.authorizeRequests().antMatchers("/login").permitAll()
+				.antMatchers(HttpMethod.OPTIONS,"/**").permitAll()
 			.and()
 				.authorizeRequests().antMatchers("/register").permitAll()
 			.and()
+				.authorizeRequests().antMatchers("/forgot").permitAll()
+			.and()
+				.authorizeRequests().antMatchers("/resetPassword").permitAll()
+			.and()
 				.authorizeRequests().anyRequest().authenticated();
 		http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+		http.cors().disable();
 	}
 	
 	@Bean

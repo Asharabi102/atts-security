@@ -8,9 +8,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.asharabi.atts.security.api.dto.UserDTO;
 import com.asharabi.atts.security.exceptions.UserNotFoundException;
 import com.asharabi.atts.security.model.User;
-import com.asharabi.atts.security.model.dto.UserDTO;
 import com.asharabi.atts.security.repository.UserRepository;
 
 @Service
@@ -96,11 +96,11 @@ public class UserService {
 		return null;
 	}
 
-	public void updatePassword(User user, String newPassword) {
+	public User updatePassword(User user, String newPassword) {
 		String encodedPassword = bCryptPasswordEncoder.encode(newPassword);
 		user.setPassword(encodedPassword);
 		user.setResetPasswordToken(null);
-		userRepository.save(user);
+		return userRepository.save(user);
 	}
 
 }

@@ -13,10 +13,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.asharabi.atts.security.api.dto.UserDTO;
 import com.asharabi.atts.security.exceptions.AlreadyExistsException;
 import com.asharabi.atts.security.model.CustomUserDetails;
 import com.asharabi.atts.security.model.User;
-import com.asharabi.atts.security.model.dto.UserDTO;
 import com.asharabi.atts.security.repository.UserRepository;
 
 @Service
